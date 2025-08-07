@@ -25,6 +25,7 @@ export class ExpenseCalculator {
       memberId: member.id,
       memberName: member.name,
       balance: Math.round(balances[member.id] * 100) / 100
+      currency: group.currency
     }));
   }
 

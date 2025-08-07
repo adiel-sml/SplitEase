@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
+import { CurrencySelector } from '../UI/CurrencySelector';
 import { Group, Member } from '../../types';
 import { generateAvatar } from '../../utils/avatars';
 import { Plus, X, Upload } from 'lucide-react';
@@ -14,7 +15,9 @@ export function CreateGroupForm({ onSubmit, onCancel }: CreateGroupFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    image: ''
+    image: '',
+    currency: 'EUR',
+    budget: ''
   });
   const [members, setMembers] = useState<Member[]>([]);
   const [memberName, setMemberName] = useState('');
@@ -94,6 +97,8 @@ export function CreateGroupForm({ onSubmit, onCancel }: CreateGroupFormProps) {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         image: formData.image || undefined,
+        currency: formData.currency,
+        budget: formData.budget ? parseFloat(formData.budget) : undefined,
         members,
         expenses: [],
         createdAt: new Date(),
@@ -134,6 +139,23 @@ export function CreateGroupForm({ onSubmit, onCancel }: CreateGroupFormProps) {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
+          
+          <CurrencySelector
+            label="Devise du groupe"
+            value={formData.currency}
+            onChange={(currency) => setFormData(prev => ({ ...prev, currency }))}
+          />
+          
+          <Input
+            label="Budget (optionnel)"
+            name="budget"
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.budget}
+            onChange={handleInputChange}
+            placeholder="Budget total pour ce groupe"
+          />
           
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

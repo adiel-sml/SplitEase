@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Share, Download, ArrowLeft, Users, Calculator } from 'lucide-react';
+import { Plus, Share, Download, ArrowLeft, Users, Calculator, BarChart3, Bell } from 'lucide-react';
 import { Group, Expense, Transaction } from '../../types';
 import { Button } from '../UI/Button';
 import { Modal } from '../UI/Modal';
@@ -7,8 +7,10 @@ import { ToastContainer } from '../UI/ToastContainer';
 import { ExpenseForm } from '../Expenses/ExpenseForm';
 import { ExpenseList } from '../Expenses/ExpenseList';
 import { BalancesSummary } from '../Balances/BalancesSummary';
+import { ExpenseChart } from '../Analytics/ExpenseChart';
 import { DataService } from '../../services/DataService';
 import { ExpenseCalculator } from '../../utils/calculations';
+import { CurrencyService } from '../../utils/currencies';
 import { useToast } from '../../hooks/useToast';
 
 interface GroupViewProps {
@@ -18,12 +20,14 @@ interface GroupViewProps {
 }
 
 export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
-  const [activeTab, setActiveTab] = useState<'expenses' | 'balances'>('expenses');
+  const [activeTab, setActiveTab] = useState<'expenses' | 'balances' | 'analytics'>('expenses');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
   
   const dataService = DataService.getInstance();
+  const currencyService = CurrencyService.getInstance();
   const { toasts, addToast } = useToast();
 
   const totalExpenses = ExpenseCalculator.getTotalExpenses(group);
@@ -177,11 +181,36 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
+    return currencyService.formatCurrency(amount, group.currency);
   };
+
+  const sendReminders = () => {
+    const balances = ExpenseCalculator.calculateBalances(group);
+    const debtors = balances.filter(b => b.balance < -0.01);
+    
+    if (debtors.length === 0) {
+      addToast({
+        type: 'info',
+        title: 'Aucun rappel nécessaire',
+        message: 'Tous les comptes sont équilibrés !',
+        duration: 3000
+      });
+      return;
+    }
+    
+    // Simulation d'envoi de rappels
+    addToast({
+      type: 'success',
+      title: 'Rappels envoyés',
+      message: `${debtors.length} rappel${debtors.length > 1 ? 's' : ''} envoyé${debtors.length > 1 ? 's' : ''} par email.`,
+      duration: 4000
+    });
+    
+    setShowReminderModal(false);
+  };
+
+  const budgetProgress = group.budget ? (totalExpenses / group.budget) * 100 : 0;
+  const isOverBudget = group.budget && totalExpenses > group.budget;
 
   return (
     <div className="max-w-4xl mx-auto relative">
@@ -235,6 +264,13 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
               {formatCurrency(totalExpenses)}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
+            {group.budget && (
+              <div className="text-xs mt-1">
+                <span className={isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                  {budgetProgress.toFixed(0)}% du budget
+                </span>
+              </div>
+            )}
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -256,6 +292,10 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
           <Button variant="outline" onClick={handleExport}>
             <Download className="w-4 h-4" />
             Exporter
+          </Button>
+          <Button variant="outline" onClick={() => setShowReminderModal(true)}>
+            <Bell className="w-4 h-4" />
+            Rappels
           </Button>
         </div>
       </div>
@@ -286,6 +326,17 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
               <Calculator className="w-4 h-4 inline mr-2" />
               Soldes
             </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'analytics'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 inline mr-2" />
+              Statistiques
+            </button>
           </nav>
         </div>
         
@@ -301,6 +352,8 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
               group={group}
               onSettleDebt={handleSettleDebt}
             />
+          ) : (
+            <ExpenseChart group={group} />
           )}
         </div>
       </div>
@@ -358,6 +411,29 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               Scannez ce QR code pour rejoindre le groupe
             </p>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Reminder Modal */}
+      <Modal
+        isOpen={showReminderModal}
+        onClose={() => setShowReminderModal(false)}
+        title="Envoyer des rappels"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 dark:text-gray-400">
+            Envoyer un rappel par email aux membres qui ont des dettes en cours ?
+          </p>
+          
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowReminderModal(false)}>
+              Annuler
+            </Button>
+            <Button onClick={sendReminders}>
+              Envoyer les rappels
+            </Button>
           </div>
         </div>
       </Modal>

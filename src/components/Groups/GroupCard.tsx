@@ -1,7 +1,9 @@
 import React from 'react';
-import { Users, Calendar, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Users, Calendar, TrendingUp, TrendingDown, Minus, Target } from 'lucide-react';
 import { Group } from '../../types';
 import { ExpenseCalculator } from '../../utils/calculations';
+import { CurrencyService } from '../../utils/currencies';
+import { getCategoryIcon } from '../../utils/categories';
 
 interface GroupCardProps {
   group: Group;
@@ -12,12 +14,10 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
   const totalExpenses = ExpenseCalculator.getTotalExpenses(group);
   const balances = ExpenseCalculator.calculateBalances(group);
   const myBalance = balances.find(b => b.memberId === 'current-user')?.balance || 0;
+  const currencyService = CurrencyService.getInstance();
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
+    return currencyService.formatCurrency(amount, group.currency);
   };
 
   const getBalanceColor = (balance: number) => {
@@ -33,6 +33,20 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
   };
 
   const BalanceIcon = getBalanceIcon(myBalance);
+
+  const budgetProgress = group.budget ? (totalExpenses / group.budget) * 100 : 0;
+  const isOverBudget = group.budget && totalExpenses > group.budget;
+
+  // Catégories les plus utilisées
+  const categoryStats = group.expenses.reduce((acc, expense) => {
+    const category = expense.category || 'other';
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const topCategories = Object.entries(categoryStats)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3);
 
   return (
     <div
@@ -81,6 +95,24 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
             <p className="text-lg font-semibold text-gray-900 dark:text-white">
               {formatCurrency(totalExpenses)}
             </p>
+            {group.budget && (
+              <div className="mt-1">
+                <div className="flex items-center gap-1 text-xs">
+                  <Target className="w-3 h-3" />
+                  <span className={isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                    {budgetProgress.toFixed(0)}% du budget
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-1">
+                  <div 
+                    className={`h-1 rounded-full transition-all ${
+                      isOverBudget ? 'bg-red-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${Math.min(budgetProgress, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-600 dark:text-gray-400">Votre solde</p>
@@ -92,6 +124,25 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
             </div>
           </div>
         </div>
+        
+        {topCategories.length > 0 && (
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700 mt-3">
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <span>Catégories principales:</span>
+            </div>
+            <div className="flex gap-1">
+              {topCategories.map(([categoryId, count]) => (
+                <span
+                  key={categoryId}
+                  className="text-sm"
+                  title={`${count} dépense${count > 1 ? 's' : ''}`}
+                >
+                  {getCategoryIcon(categoryId)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

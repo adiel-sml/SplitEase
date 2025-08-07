@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Edit, Trash2, Calendar, User, Users } from 'lucide-react';
+import { Edit, Trash2, Calendar, User, Users, MessageCircle } from 'lucide-react';
 import { Group, Expense } from '../../types';
 import { Button } from '../UI/Button';
+import { SearchInput } from '../UI/SearchInput';
+import { CurrencyService } from '../../utils/currencies';
+import { getCategoryIcon, getCategoryName, EXPENSE_CATEGORIES } from '../../utils/categories';
 
 interface ExpenseListProps {
   group: Group;
@@ -12,12 +15,13 @@ interface ExpenseListProps {
 export function ExpenseList({ group, onEditExpense, onDeleteExpense }: ExpenseListProps) {
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
   const [filterBy, setFilterBy] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
+  const currencyService = CurrencyService.getInstance();
+
+  const formatCurrency = (amount: number, currency: string = group.currency) => {
+    return currencyService.formatCurrency(amount, currency);
   };
 
   const sortedExpenses = [...group.expenses].sort((a, b) => {
@@ -28,8 +32,13 @@ export function ExpenseList({ group, onEditExpense, onDeleteExpense }: ExpenseLi
   });
 
   const filteredExpenses = sortedExpenses.filter(expense => {
-    if (filterBy === 'all') return true;
-    return expense.paidBy === filterBy;
+    const matchesPayer = filterBy === 'all' || expense.paidBy === filterBy;
+    const matchesCategory = categoryFilter === 'all' || expense.category === categoryFilter;
+    const matchesSearch = !searchTerm || 
+      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getCategoryName(expense.category).toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesPayer && matchesCategory && matchesSearch;
   });
 
   const getMemberName = (memberId: string) => {
@@ -70,8 +79,14 @@ export function ExpenseList({ group, onEditExpense, onDeleteExpense }: ExpenseLi
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex gap-2">
+      <div className="space-y-4">
+        <SearchInput
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Rechercher une dépense..."
+        />
+        
+        <div className="flex flex-col sm:flex-row gap-4">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'date' | 'amount')}
@@ -93,6 +108,19 @@ export function ExpenseList({ group, onEditExpense, onDeleteExpense }: ExpenseLi
               </option>
             ))}
           </select>
+          
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+          >
+            <option value="all">Toutes catégories</option>
+            {EXPENSE_CATEGORIES.map(category => (
+              <option key={category.id} value={category.id}>
+                {category.icon} {category.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -104,19 +132,25 @@ export function ExpenseList({ group, onEditExpense, onDeleteExpense }: ExpenseLi
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-1">
-                  {expense.description}
-                </h4>
-                {expense.category && (
-                  <span className="inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded">
-                    {expense.category}
-                  </span>
-                )}
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">{getCategoryIcon(expense.category)}</span>
+                  <h4 className="font-medium text-gray-900 dark:text-white">
+                    {expense.description}
+                  </h4>
+                </div>
+                <span className="inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded">
+                  {getCategoryName(expense.category)}
+                </span>
               </div>
               <div className="text-right">
                 <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {formatCurrency(expense.amount)}
+                  {formatCurrency(expense.amount, expense.currency)}
                 </div>
+                {expense.currency !== group.currency && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Devise: {expense.currency}
+                  </div>
+                )}
               </div>
             </div>
             
@@ -135,6 +169,12 @@ export function ExpenseList({ group, onEditExpense, onDeleteExpense }: ExpenseLi
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <Users className="w-4 h-4" />
                 <span>{getSplitSummary(expense)}</span>
+                {expense.comments && expense.comments.length > 0 && (
+                  <div className="flex items-center gap-1 ml-2">
+                    <MessageCircle className="w-4 h-4" />
+                    <span>{expense.comments.length}</span>
+                  </div>
+                )}
               </div>
               
               <div className="flex gap-2">

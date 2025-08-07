@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Filter } from 'lucide-react';
 import { Group } from '../../types';
 import { Button } from '../UI/Button';
-import { Input } from '../UI/Input';
+import { SearchInput } from '../UI/SearchInput';
 import { GroupCard } from '../Groups/GroupCard';
+import { CurrencyService } from '../../utils/currencies';
 
 interface DashboardProps {
   groups: Group[];
@@ -13,11 +14,36 @@ interface DashboardProps {
 
 export function Dashboard({ groups, onSelectGroup, onCreateGroup }: DashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'activity' | 'amount'>('activity');
+  const [filterCurrency, setFilterCurrency] = useState<string>('all');
 
-  const filteredGroups = groups.filter(group =>
-    group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    group.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const currencyService = CurrencyService.getInstance();
+
+  const filteredAndSortedGroups = groups
+    .filter(group => {
+      const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        group.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCurrency = filterCurrency === 'all' || group.currency === filterCurrency;
+      
+      return matchesSearch && matchesCurrency;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'activity':
+          return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
+        case 'amount':
+          const totalA = a.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+          const totalB = b.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+          return totalB - totalA;
+        default:
+          return 0;
+      }
+    });
+
+  const uniqueCurrencies = [...new Set(groups.map(g => g.currency))];
 
   if (groups.length === 0) {
     return (
@@ -60,19 +86,46 @@ export function Dashboard({ groups, onSelectGroup, onCreateGroup }: DashboardPro
 
       {groups.length > 3 && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Rechercher un groupe..."
+          <SearchInput
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            onChange={setSearchTerm}
+            placeholder="Rechercher un groupe..."
           />
         </div>
       )}
 
+      {groups.length > 1 && (
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            >
+              <option value="activity">Activité récente</option>
+              <option value="name">Nom A-Z</option>
+              <option value="amount">Montant total</option>
+            </select>
+          </div>
+          
+          {uniqueCurrencies.length > 1 && (
+            <select
+              value={filterCurrency}
+              onChange={(e) => setFilterCurrency(e.target.value)}
+              className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            >
+              <option value="all">Toutes devises</option>
+              {uniqueCurrencies.map(currency => (
+                <option key={currency} value={currency}>{currency}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredGroups.map((group) => (
+        {filteredAndSortedGroups.map((group) => (
           <GroupCard
             key={group.id}
             group={group}
@@ -81,7 +134,7 @@ export function Dashboard({ groups, onSelectGroup, onCreateGroup }: DashboardPro
         ))}
       </div>
 
-      {filteredGroups.length === 0 && searchTerm && (
+      {filteredAndSortedGroups.length === 0 && searchTerm && (
         <div className="text-center py-8">
           <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">

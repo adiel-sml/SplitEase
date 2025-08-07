@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
+import { CategorySelector } from '../UI/CategorySelector';
+import { CurrencySelector } from '../UI/CurrencySelector';
 import { Group, Expense, Member } from '../../types';
-import { Check } from 'lucide-react';
+import { Check, Camera, Paperclip } from 'lucide-react';
+import { CurrencyService } from '../../utils/currencies';
 
 interface ExpenseFormProps {
   group: Group;
@@ -15,9 +18,10 @@ export function ExpenseForm({ group, expense, onSubmit, onCancel }: ExpenseFormP
   const [formData, setFormData] = useState({
     description: expense?.description || '',
     amount: expense?.amount?.toString() || '',
+    currency: expense?.currency || group.currency || 'EUR',
     paidBy: expense?.paidBy || group.members[0]?.id || '',
     date: expense?.date.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-    category: expense?.category || ''
+    category: expense?.category || 'other'
   });
   
   const [splitType, setSplitType] = useState<'equal' | 'custom'>('equal');
@@ -35,6 +39,8 @@ export function ExpenseForm({ group, expense, onSubmit, onCancel }: ExpenseFormP
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  const currencyService = CurrencyService.getInstance();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -111,10 +117,11 @@ export function ExpenseForm({ group, expense, onSubmit, onCancel }: ExpenseFormP
         groupId: group.id,
         description: formData.description.trim(),
         amount,
+        currency: formData.currency,
         paidBy: formData.paidBy,
         splitBetween,
         date: new Date(formData.date),
-        category: formData.category || undefined,
+        category: formData.category,
         createdAt: expense?.createdAt || new Date()
       };
       
@@ -154,6 +161,12 @@ export function ExpenseForm({ group, expense, onSubmit, onCancel }: ExpenseFormP
             error={errors.amount}
           />
           
+          <CurrencySelector
+            label="Devise"
+            value={formData.currency}
+            onChange={(currency) => setFormData(prev => ({ ...prev, currency }))}
+          />
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Payé par *
@@ -183,13 +196,33 @@ export function ExpenseForm({ group, expense, onSubmit, onCancel }: ExpenseFormP
             onChange={handleInputChange}
           />
           
-          <Input
+          <CategorySelector
             label="Catégorie"
-            name="category"
             value={formData.category}
-            onChange={handleInputChange}
-            placeholder="Restaurant, Transport, Logement..."
+            onChange={(category) => setFormData(prev => ({ ...prev, category }))}
           />
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Pièces jointes
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
+              >
+                <Camera className="w-4 h-4" />
+                Photo
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
+              >
+                <Paperclip className="w-4 h-4" />
+                Fichier
+              </button>
+            </div>
+          </div>
         </div>
         
         <div className="space-y-4">
@@ -263,7 +296,7 @@ export function ExpenseForm({ group, expense, onSubmit, onCancel }: ExpenseFormP
                       <div className="flex items-center gap-2">
                         {splitType === 'equal' ? (
                           <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {equalAmount.toFixed(2)} €
+                            {currencyService.formatCurrency(equalAmount, formData.currency)}
                           </span>
                         ) : (
                           <input

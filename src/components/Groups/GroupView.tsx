@@ -19,8 +19,10 @@ interface GroupViewProps {
   onUpdateGroup: (group: Group) => void;
 }
 
+type TabKey = 'expenses' | 'balances' | 'analytics';
+
 export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
-  const [activeTab, setActiveTab] = useState<'expenses' | 'balances' | 'analytics'>('expenses');
+  const [activeTab, setActiveTab] = useState<TabKey>('expenses');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
   const [showShareModal, setShowShareModal] = useState(false);
@@ -34,10 +36,10 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
 
   const handleAddExpense = async (expense: Expense) => {
     try {
-      const updatedGroup = {
+      const updatedGroup: Group = {
         ...group,
         expenses: editingExpense
-          ? group.expenses.map(e => e.id === expense.id ? expense : e)
+          ? group.expenses.map(e => (e.id === expense.id ? expense : e))
           : [...group.expenses, expense],
         lastActivity: new Date()
       };
@@ -77,7 +79,7 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer la dépense "${expense?.description}" ?`)) return;
     
     try {
-      const updatedGroup = {
+      const updatedGroup: Group = {
         ...group,
         expenses: group.expenses.filter(e => e.id !== expenseId),
         lastActivity: new Date()
@@ -209,8 +211,12 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
     setShowReminderModal(false);
   };
 
-  const budgetProgress = group.budget ? (totalExpenses / group.budget) * 100 : 0;
-  const isOverBudget = group.budget && totalExpenses > group.budget;
+  const hasBudget = typeof group.budget === 'number';
+  const budgetValue = (hasBudget ? (group.budget as number) : 0);
+  const budgetProgress = hasBudget && budgetValue > 0 ? (totalExpenses / budgetValue) * 100 : 0;
+  const isOverBudget = hasBudget && totalExpenses > budgetValue;
+
+  const perPerson = group.members.length > 0 ? totalExpenses / group.members.length : 0;
 
   return (
     <div className="max-w-4xl mx-auto relative">
@@ -264,7 +270,7 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
               {formatCurrency(totalExpenses)}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
-            {group.budget && (
+            {hasBudget && (
               <div className="text-xs mt-1">
                 <span className={isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
                   {budgetProgress.toFixed(0)}% du budget
@@ -274,7 +280,7 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(totalExpenses / group.members.length)}
+              {formatCurrency(perPerson)}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Par personne</div>
           </div>
@@ -347,7 +353,7 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
               onEditExpense={handleEditExpense}
               onDeleteExpense={handleDeleteExpense}
             />
-          ) : (
+          ) : activeTab === 'balances' ? (
             <BalancesSummary
               group={group}
               onSettleDebt={handleSettleDebt}

@@ -9,6 +9,9 @@ interface ExpenseChartProps {
 
 export function ExpenseChart({ group }: ExpenseChartProps) {
   const currencyService = CurrencyService.getInstance();
+  const currencyCode = group.currency ?? 'EUR';
+  const formatCurrency = (amount: number) =>
+    currencyService.formatCurrency(amount, currencyCode);
 
   // Calcul des dépenses par catégorie
   const categoryTotals = group.expenses.reduce((acc, expense) => {
@@ -24,7 +27,7 @@ export function ExpenseChart({ group }: ExpenseChartProps) {
       categoryId,
       name: getCategoryName(categoryId),
       amount,
-      percentage: (amount / totalAmount) * 100,
+      percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
       color: getCategoryColor(categoryId)
     }))
     .sort((a, b) => b.amount - a.amount);
@@ -45,7 +48,7 @@ export function ExpenseChart({ group }: ExpenseChartProps) {
         memberId,
         name: member?.name || 'Inconnu',
         amount,
-        percentage: (amount / totalAmount) * 100,
+        percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
         color: member?.color || '#64748b'
       };
     })
@@ -60,6 +63,11 @@ export function ExpenseChart({ group }: ExpenseChartProps) {
       </div>
     );
   }
+
+  const avgExpense = group.expenses.length > 0 ? totalAmount / group.expenses.length : 0;
+  const maxMemberSpend = Object.values(memberTotals).length
+    ? Math.max(...Object.values(memberTotals))
+    : 0;
 
   return (
     <div className="space-y-8">
@@ -82,7 +90,7 @@ export function ExpenseChart({ group }: ExpenseChartProps) {
                     {category.name}
                   </span>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {currencyService.formatCurrency(category.amount, group.currency)}
+                    {formatCurrency(category.amount)}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -122,7 +130,7 @@ export function ExpenseChart({ group }: ExpenseChartProps) {
                     {member.name}
                   </span>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {currencyService.formatCurrency(member.amount, group.currency)}
+                    {formatCurrency(member.amount)}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -156,7 +164,7 @@ export function ExpenseChart({ group }: ExpenseChartProps) {
         
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center">
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {currencyService.formatCurrency(totalAmount / group.expenses.length, group.currency)}
+            {formatCurrency(avgExpense)}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Dépense moyenne
@@ -174,7 +182,7 @@ export function ExpenseChart({ group }: ExpenseChartProps) {
         
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-center">
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            {currencyService.formatCurrency(Math.max(...Object.values(memberTotals)), group.currency)}
+            {formatCurrency(maxMemberSpend)}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Plus grosse dépense

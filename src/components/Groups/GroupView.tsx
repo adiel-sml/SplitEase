@@ -49,7 +49,6 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
       setShowExpenseForm(false);
       setEditingExpense(undefined);
       
-      // Show success toast
       addToast({
         type: 'success',
         title: editingExpense ? 'Dépense modifiée' : 'Dépense ajoutée',
@@ -110,9 +109,6 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
     if (!confirm(`Confirmer ce remboursement ?\n\n${formattedDescription}`)) {
       return;
     }
-    
-    // For now, we'll just show a success message
-    // In a real app, this would be tracked in settlements
     addToast({
       type: 'success',
       title: 'Remboursement confirmé',
@@ -182,9 +178,10 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
     setShowShareModal(true);
   };
 
-  const formatCurrency = (amount: number) => {
-    return currencyService.formatCurrency(amount, group.currency);
-  };
+  // --- FIX devise: fallback si group.currency est indéfini ---
+  const currencyCode = group.currency ?? 'EUR';
+  const formatCurrency = (amount: number) =>
+    currencyService.formatCurrency(amount, currencyCode);
 
   const sendReminders = () => {
     const balances = ExpenseCalculator.calculateBalances(group);
@@ -200,7 +197,6 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
       return;
     }
     
-    // Simulation d'envoi de rappels
     addToast({
       type: 'success',
       title: 'Rappels envoyés',
@@ -212,7 +208,7 @@ export function GroupView({ group, onBack, onUpdateGroup }: GroupViewProps) {
   };
 
   const hasBudget = typeof group.budget === 'number';
-  const budgetValue = (hasBudget ? (group.budget as number) : 0);
+  const budgetValue = hasBudget ? (group.budget as number) : 0;
   const budgetProgress = hasBudget && budgetValue > 0 ? (totalExpenses / budgetValue) * 100 : 0;
   const isOverBudget = hasBudget && totalExpenses > budgetValue;
 

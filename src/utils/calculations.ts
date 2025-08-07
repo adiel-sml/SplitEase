@@ -24,7 +24,7 @@ export class ExpenseCalculator {
     return group.members.map(member => ({
       memberId: member.id,
       memberName: member.name,
-      balance: Math.round(balances[member.id] * 100) / 100
+      balance: Math.round(balances[member.id] * 100) / 100,
       currency: group.currency
     }));
   }

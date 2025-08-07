@@ -14,11 +14,11 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
   const totalExpenses = ExpenseCalculator.getTotalExpenses(group);
   const balances = ExpenseCalculator.calculateBalances(group);
   const myBalance = balances.find(b => b.memberId === 'current-user')?.balance || 0;
-  const currencyService = CurrencyService.getInstance();
 
-  const formatCurrency = (amount: number) => {
-    return currencyService.formatCurrency(amount, group.currency);
-  };
+  const currencyService = CurrencyService.getInstance();
+  // Fallback devise pour éviter "undefined 149.98"
+  const currencyCode = group.currency ?? 'EUR';
+  const formatCurrency = (amount: number) => currencyService.formatCurrency(amount, currencyCode);
 
   const getBalanceColor = (balance: number) => {
     if (balance > 0) return 'text-green-600 dark:text-green-400';
@@ -34,8 +34,10 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
 
   const BalanceIcon = getBalanceIcon(myBalance);
 
-  const budgetProgress = group.budget ? (totalExpenses / group.budget) * 100 : 0;
-  const isOverBudget = group.budget && totalExpenses > group.budget;
+  const hasBudget = typeof group.budget === 'number' && isFinite(group.budget as number);
+  const budgetValue = hasBudget ? (group.budget as number) : 0;
+  const budgetProgress = hasBudget && budgetValue > 0 ? (totalExpenses / budgetValue) * 100 : 0;
+  const isOverBudget = hasBudget && totalExpenses > budgetValue;
 
   // Catégories les plus utilisées
   const categoryStats = group.expenses.reduce((acc, expense) => {
@@ -43,10 +45,15 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
     acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-  
+
   const topCategories = Object.entries(categoryStats)
-    .sort(([,a], [,b]) => b - a)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
+
+  // lastActivity peut être Date ou string selon la source -> on normalise
+  const lastActivityDate = group.lastActivity instanceof Date
+    ? group.lastActivity
+    : new Date(group.lastActivity as any);
 
   return (
     <div
@@ -84,7 +91,9 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {group.lastActivity.toLocaleDateString('fr-FR')}
+              {isNaN(lastActivityDate.getTime())
+                ? '—'
+                : lastActivityDate.toLocaleDateString('fr-FR')}
             </span>
           </div>
         </div>
@@ -95,7 +104,7 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
             <p className="text-lg font-semibold text-gray-900 dark:text-white">
               {formatCurrency(totalExpenses)}
             </p>
-            {group.budget && (
+            {hasBudget && (
               <div className="mt-1">
                 <div className="flex items-center gap-1 text-xs">
                   <Target className="w-3 h-3" />
@@ -128,7 +137,7 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
         {topCategories.length > 0 && (
           <div className="pt-3 border-t border-gray-200 dark:border-gray-700 mt-3">
             <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <span>Catégories principales:</span>
+              <span>Catégories principales&nbsp;:</span>
             </div>
             <div className="flex gap-1">
               {topCategories.map(([categoryId, count]) => (

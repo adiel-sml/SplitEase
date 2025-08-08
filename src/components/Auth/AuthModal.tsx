@@ -16,7 +16,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    name: '',
+    username: '',
+    full_name: '',
     confirmPassword: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -48,8 +49,14 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     }
 
     if (mode === 'signup') {
-      if (!formData.name.trim()) {
-        newErrors.name = 'Le nom est obligatoire';
+      if (!formData.username.trim()) {
+        newErrors.username = 'Le nom d\'utilisateur est obligatoire';
+      } else if (formData.username.length < 3) {
+        newErrors.username = 'Le nom d\'utilisateur doit contenir au moins 3 caractères';
+      }
+
+      if (!formData.full_name.trim()) {
+        newErrors.full_name = 'Le nom complet est obligatoire';
       }
 
       if (formData.password !== formData.confirmPassword) {
@@ -70,9 +77,14 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     try {
       if (mode === 'signup') {
-        await dataService.signUp(formData.email, formData.password, formData.name);
+        const { user } = useAuth();
+        await user.signUp(formData.email, formData.password, {
+          username: formData.username,
+          full_name: formData.full_name
+        });
       } else {
-        await dataService.signIn(formData.email, formData.password);
+        const { user } = useAuth();
+        await user.signIn(formData.email, formData.password);
       }
       
       onSuccess();
@@ -85,7 +97,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   };
 
   const resetForm = () => {
-    setFormData({ email: '', password: '', name: '', confirmPassword: '' });
+    setFormData({ email: '', password: '', username: '', full_name: '', confirmPassword: '' });
     setErrors({});
   };
 
@@ -109,18 +121,33 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         )}
 
         {mode === 'signup' && (
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              name="name"
-              type="text"
-              placeholder="Votre nom complet"
-              value={formData.name}
-              onChange={handleInputChange}
-              error={errors.name}
-              className="pl-10"
-            />
-          </div>
+          <>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                name="username"
+                type="text"
+                placeholder="nom_utilisateur"
+                value={formData.username}
+                onChange={handleInputChange}
+                error={errors.username}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                name="full_name"
+                type="text"
+                placeholder="Prénom Nom"
+                value={formData.full_name}
+                onChange={handleInputChange}
+                error={errors.full_name}
+                className="pl-10"
+              />
+            </div>
+          </>
         )}
 
         <div className="relative">

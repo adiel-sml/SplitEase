@@ -6,6 +6,9 @@ import { Sidebar } from './components/Layout/Sidebar';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { CreateGroupForm } from './components/Groups/CreateGroupForm';
 import { GroupView } from './components/Groups/GroupView';
+import { ProfilePage } from './components/Profile/ProfilePage';
+import { ContactManager } from './components/Contacts/ContactManager';
+import { NotificationSettings } from './components/Settings/NotificationSettings';
 import { Modal } from './components/UI/Modal';
 import { ToastContainer } from './components/UI/ToastContainer';
 import { AuthModal } from './components/Auth/AuthModal';
@@ -145,14 +148,26 @@ function AppContent() {
                 />
               )}
               
+              {currentView === 'profile' && (
+                <ProfilePage />
+              )}
+              
+              {currentView === 'contacts' && (
+                <ContactManager />
+              )}
+              
+              {currentView === 'notifications' && (
+                <NotificationSettings />
+              )}
+              
               {currentView === 'settings' && (
                 <div className="max-w-2xl mx-auto">
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                      Paramètres
+                      Paramètres Généraux
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Les paramètres de l'application seront disponibles dans une prochaine version.
+                      Paramètres généraux de l'application (thème, langue, etc.)
                     </p>
                   </div>
                 </div>

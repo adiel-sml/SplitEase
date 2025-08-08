@@ -46,10 +46,17 @@ export function CreateGroupForm({ onSubmit, onCancel }: CreateGroupFormProps) {
   const addMember = () => {
     if (!memberName.trim()) return;
     
+    // Validation email obligatoire
+    if (!memberName.includes('@')) {
+      setErrors(prev => ({ ...prev, memberEmail: 'L\'email est obligatoire pour tous les membres' }));
+      return;
+    }
+    
     const { avatar, color } = generateAvatar(memberName);
     const newMember: Member = {
       id: Date.now().toString(),
-      name: memberName.trim(),
+      name: memberName.split('@')[0], // Utiliser la partie avant @ comme nom
+      email: memberName.trim(),
       avatar,
       color
     };
@@ -193,8 +200,10 @@ export function CreateGroupForm({ onSubmit, onCancel }: CreateGroupFormProps) {
                 value={memberName}
                 onChange={(e) => setMemberName(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Nom du membre"
+                placeholder="Email du membre"
+                type="email"
                 className="flex-1"
+                error={errors.memberEmail}
               />
               <Button
                 type="button"
@@ -222,6 +231,9 @@ export function CreateGroupForm({ onSubmit, onCancel }: CreateGroupFormProps) {
                   />
                   <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
                     {member.name}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {member.email}
                   </span>
                   <button
                     type="button"

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Users, Plus, Settings, X } from 'lucide-react';
+import { Home, Users, Plus, Settings, X, User, Bell, UserPlus } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,6 +12,9 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate }: SidebarPro
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'create-group', label: 'Create Group', icon: Plus },
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'contacts', label: 'Contacts', icon: UserPlus },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
 

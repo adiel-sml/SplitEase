@@ -7,13 +7,12 @@ import { SupabaseDataService } from '../../services/SupabaseDataService';
 interface HeaderProps {
   title: string;
   user?: SupabaseUser | null;
-  onAuthClick?: () => void;
   onMenuClick?: () => void;
   onBackClick?: () => void;
   showBack?: boolean;
 }
 
-export function Header({ title, user, onAuthClick, onMenuClick, onBackClick, showBack = false }: HeaderProps) {
+export function Header({ title, user, onMenuClick, onBackClick, showBack = false }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const dataService = SupabaseDataService.getInstance();
 
@@ -51,33 +50,23 @@ export function Header({ title, user, onAuthClick, onMenuClick, onBackClick, sho
           </div>
           
           <div className="flex items-center gap-2">
-            {user ? (
-              <div className="flex items-center gap-2">
-                <div className="hidden sm:block text-right">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {user.user_metadata?.name || user.email}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Connecté
-                  </div>
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:block text-right">
+                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  {user?.user_metadata?.name || user?.email}
                 </div>
-                <button
-                  onClick={handleSignOut}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Se déconnecter"
-                >
-                  <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                </button>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Connecté
+                </div>
               </div>
-            ) : (
               <button
-                onClick={onAuthClick}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                onClick={handleSignOut}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                title="Se déconnecter"
               >
-                <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Se connecter</span>
+                <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
-            )}
+            </div>
             
             <button
               onClick={toggleTheme}

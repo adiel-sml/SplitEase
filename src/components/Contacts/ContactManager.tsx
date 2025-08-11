@@ -5,12 +5,12 @@ import { Input } from '../UI/Input';
 import { SearchInput } from '../UI/SearchInput';
 import { Modal } from '../UI/Modal';
 import { UserContact } from '../../types/auth';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 
 export function ContactManager() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addToast } = useToast();
   const [contacts, setContacts] = useState<UserContact[]>([]);
   const [loading, setLoading] = useState(true);

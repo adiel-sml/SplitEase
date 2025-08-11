@@ -1,6 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { AuthContextType } from '../types/auth';
-import { useAuth as useAuthHook } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 // Create the authentication context
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -14,7 +14,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const auth = useAuthHook();
+  const auth = useAuth();
 
   return (
     <AuthContext.Provider value={auth}>
@@ -24,15 +24,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 }
 
 /**
- * useAuth Hook
+ * useAuthContext Hook
  * Custom hook to access authentication context
  * Throws error if used outside of AuthProvider
  */
-export function useAuth(): AuthContextType {
+export function useAuthContext(): AuthContextType {
   const context = useContext(AuthContext);
   
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuthContext must be used within an AuthProvider');
   }
   
   return context;
@@ -43,7 +43,7 @@ export function useAuth(): AuthContextType {
  * Returns authentication status for route protection
  */
 export function useAuthGuard() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthContext();
   
   return {
     isAuthenticated: !!user,

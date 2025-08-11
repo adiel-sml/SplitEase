@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { Group, Expense, Member } from '../types';
 import { DataService } from '../services/DataService';
 import { SupabaseDataService } from '../services/SupabaseDataService';
-import { useAuth } from '../hooks/useAuth';
+import { useAuthContext } from './AuthContext';
 
 interface AppState {
   groups: Group[];
@@ -67,10 +67,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuthContext();
   
   // Use Supabase when authenticated, localStorage otherwise
-  const dataService = isAuthenticated 
+  const dataService = user 
     ? SupabaseDataService.getInstance()
     : DataService.getInstance();
 

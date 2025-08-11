@@ -17,7 +17,7 @@ import {
 import { Group, Expense } from '../../types';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 
 interface SocialFeaturesProps {
@@ -66,7 +66,7 @@ interface ActivityItem {
 }
 
 export function SocialFeatures({ group, onUpdateGroup }: SocialFeaturesProps) {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addToast } = useToast();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
 import { Modal } from '../UI/Modal';
-import { SupabaseDataService } from '../../services/SupabaseDataService';
+import { useAuthContext } from '../../context/AuthContext';
 import { LogIn, UserPlus, Mail, Lock, User } from 'lucide-react';
 
 interface AuthModalProps {
@@ -23,7 +23,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const dataService = SupabaseDataService.getInstance();
+  const { signUp, signIn } = useAuthContext();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -77,14 +77,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     try {
       if (mode === 'signup') {
-        const { user } = useAuth();
-        await user.signUp(formData.email, formData.password, {
+        await signUp(formData.email, formData.password, {
           username: formData.username,
           full_name: formData.full_name
         });
       } else {
-        const { user } = useAuth();
-        await user.signIn(formData.email, formData.password);
+        await signIn(formData.email, formData.password);
       }
       
       onSuccess();

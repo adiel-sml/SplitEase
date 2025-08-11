@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Globe, Clock, Camera, Save, AlertCircle } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../context/AuthContext';
 import { UserProfile } from '../../types/auth';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 
 export function ProfilePage() {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile } = useAuthContext();
   const { addToast } = useToast();
   const [formData, setFormData] = useState<Partial<UserProfile>>({});
   const [loading, setLoading] = useState(false);

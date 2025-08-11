@@ -2,7 +2,7 @@ import React from 'react';
 import { Menu, Moon, Sun, ArrowLeft, User, LogOut } from 'lucide-react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useTheme } from '../../hooks/useTheme';
-import { SupabaseDataService } from '../../services/SupabaseDataService';
+import { useAuthContext } from '../../context/AuthContext';
 
 interface HeaderProps {
   title: string;
@@ -14,11 +14,11 @@ interface HeaderProps {
 
 export function Header({ title, user, onMenuClick, onBackClick, showBack = false }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const dataService = SupabaseDataService.getInstance();
+  const { signOut } = useAuthContext();
 
   const handleSignOut = async () => {
     try {
-      await dataService.signOut();
+      await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
     }

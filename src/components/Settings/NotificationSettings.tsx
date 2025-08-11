@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Mail, Smartphone, MessageSquare, Clock, Calendar, Save } from 'lucide-react';
 import { Button } from '../UI/Button';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../context/AuthContext';
 import { NotificationPreferences } from '../../types/auth';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 
 export function NotificationSettings() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addToast } = useToast();
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
